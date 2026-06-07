@@ -201,7 +201,7 @@ We offer flexible subscription plans on RapidAPI:
 | Business | $99 | 500,000 | ✅ (up to 100) | Priority |
 | Enterprise | Custom | Unlimited | ✅ (up to 100) | Dedicated |
 
-**[→ Subscribe on RapidAPI](https://rapidapi.com/scalvo/api/latam-id-validator)**
+**[→ Subscribe on RapidAPI](https://rapidapi.com/sergiocalvog/api/latam-id-validator1)**
 
 ---
 
