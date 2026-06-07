@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Cloudflare Wrangler files
+.wrangler/
+.dev.vars
+
+# Coverage reports
+coverage/
+
+# Environment files
+.env
+
+# OS files
+.DS_Store
+Thumbs.db

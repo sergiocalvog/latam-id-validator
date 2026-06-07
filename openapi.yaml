@@ -1,0 +1,350 @@
+openapi: 3.0.3
+info:
+  title: LATAM ID Validator API
+  description: |
+    REST API to validate Latin American identity documents — CPF (Brazil), CURP (Mexico),
+    RUT (Chile), DNI/CUIL/CUIT (Argentina), and Cédula de Ciudadanía (Colombia).
+    100% algorithmic validation with zero external database dependencies. KYC ready.
+  version: 1.0.0
+  contact:
+    name: LATAM ID Validator Support
+    url: https://github.com/scalvo/latam-id-validator
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://latam-id-validator.workers.dev
+    description: Production (Cloudflare Workers)
+  - url: https://latam-id-validator.p.rapidapi.com
+    description: RapidAPI Gateway
+paths:
+  /v1/health:
+    get:
+      summary: Health check
+      description: Check the API service status. Does not require authentication.
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: healthy
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+
+  /v1/documents:
+    get:
+      summary: Supported documents
+      description: Retrieve the catalog of supported countries and document formats. Requires authentication.
+      security:
+        - ApiKeyAuth: []
+        - RapidAPIKeyAuth: []
+      responses:
+        '200':
+          description: Supported documents list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      documents:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/DocumentItem'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '429':
+          $ref: '#/components/responses/429RateLimit'
+
+  /v1/validate:
+    post:
+      summary: Validate a single document
+      description: Algorithmic validation of a single identity document. Requires authentication.
+      security:
+        - ApiKeyAuth: []
+        - RapidAPIKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateRequest'
+      responses:
+        '200':
+          description: Validation result. Business logic errors (invalid check digits, bad formats) are returned in this 200 payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '429':
+          $ref: '#/components/responses/429RateLimit'
+
+  /v1/validate/batch:
+    post:
+      summary: Validate multiple documents
+      description: Validate up to 100 documents in a single request. Batch endpoint is disabled on the Free tier.
+      security:
+        - ApiKeyAuth: []
+        - RapidAPIKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - documents
+              properties:
+                documents:
+                  type: array
+                  maxItems: 100
+                  items:
+                    $ref: '#/components/schemas/ValidateRequest'
+      responses:
+        '200':
+          description: Batch validation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            valid:
+                              type: boolean
+                              example: true
+                            country:
+                              type: string
+                              example: BR
+                            document_type:
+                              type: string
+                              example: CPF
+                            normalized:
+                              type: string
+                              example: 52998224725
+                            details:
+                              type: object
+                              properties:
+                                region_code:
+                                  type: string
+                                  example: "2"
+                            errors:
+                              type: array
+                              items:
+                                type: string
+                              example: []
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '401':
+          $ref: '#/components/responses/401Unauthorized'
+        '403':
+          description: Forbidden (Batch is disabled on Free plan)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/429RateLimit'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API Key for direct gateway access.
+    RapidAPIKeyAuth:
+      type: apiKey
+      in: header
+      name: X-RapidAPI-Key
+      description: API Key injected by RapidAPI gateway.
+
+  responses:
+    400BadRequest:
+      description: Bad request (malformed JSON or missing required fields)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: BAD_REQUEST
+              message: "Missing required fields: country, document_type, value"
+            meta:
+              version: 1.0.0
+              timestamp: "2026-06-07T15:00:00Z"
+              request_id: "788fa94d-17e9-4e78-831d-d557348bd94e"
+    401Unauthorized:
+      description: Unauthorized (missing or invalid API key)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: UNAUTHORIZED
+              message: "Invalid or missing API key"
+            meta:
+              version: 1.0.0
+              timestamp: "2026-06-07T15:00:00Z"
+              request_id: "788fa94d-17e9-4e78-831d-d557348bd94e"
+    429RateLimit:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: "Rate limit exceeded. Upgrade your plan."
+            meta:
+              version: 1.0.0
+              timestamp: "2026-06-07T15:00:00Z"
+              request_id: "788fa94d-17e9-4e78-831d-d557348bd94e"
+
+  schemas:
+    ValidateRequest:
+      type: object
+      required:
+        - country
+        - document_type
+        - value
+      properties:
+        country:
+          type: string
+          description: ISO 2-letter country code
+          enum: [BR, MX, AR, CL, CO]
+          example: BR
+        document_type:
+          type: string
+          description: Supported document type for the country
+          enum: [CPF, CURP, DNI, CUIL, CUIT, RUT, CEDULA]
+          example: CPF
+        value:
+          type: string
+          description: Raw document value with or without dots/hyphens
+          example: "529.982.247-25"
+
+    ValidateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            valid:
+              type: boolean
+              example: true
+            country:
+              type: string
+              example: BR
+            document_type:
+              type: string
+              example: CPF
+            normalized:
+              type: string
+              example: "52998224725"
+            details:
+              type: object
+              description: Extra information extracted from the document
+              example:
+                region_code: "2"
+            errors:
+              type: array
+              description: Validation error codes if valid is false
+              items:
+                type: string
+              example: []
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: UNAUTHORIZED
+            message:
+              type: string
+              example: "Invalid or missing API key"
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+    Meta:
+      type: object
+      properties:
+        version:
+          type: string
+          example: 1.0.0
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-06-07T15:00:00Z"
+        request_id:
+          type: string
+          format: uuid
+          example: "788fa94d-17e9-4e78-831d-d557348bd94e"
+
+    DocumentItem:
+      type: object
+      properties:
+        country:
+          type: string
+          example: BR
+        country_name:
+          type: string
+          example: Brazil
+        document_type:
+          type: string
+          example: CPF
+        name:
+          type: string
+          example: Cadastro de Pessoas Físicas
+        has_checksum:
+          type: boolean
+          example: true
