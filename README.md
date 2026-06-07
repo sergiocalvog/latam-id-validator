@@ -10,7 +10,7 @@
 > RUT (Chile), and Cédula de Ciudadanía (Colombia).
 > 100% algorithmic validation — no external databases required.
 
-**[→ Try it on RapidAPI](https://rapidapi.com/scalvo/api/latam-id-validator)**
+**[→ Try it on RapidAPI](https://rapidapi.com/sergiocalvog/api/latam-id-validator1)**
 
 Validate identity documents across South and Central America with ease. This high-performance document verification API is tailor-made for KYC LATAM compliance, fintech identity API platforms, and user onboarding pipelines. Whether you need a Brazil tax ID, Mexico CURP API, RUT Chile validator, DNI Argentina, or cédula Colombia validation service, our unified REST API identity documents engine guarantees sub-millisecond edge response times.
 
