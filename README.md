@@ -189,17 +189,6 @@ Your worker will be active at `https://latam-id-validator.YOUR_SUBDOMAIN.workers
 
 ---
 
-## Publish to RapidAPI
-
-To monetize this API on RapidAPI:
-1. Create a provider account on [RapidAPI Provider Portal](https://rapidapi.com/studio).
-2. Create a new API named **"LATAM ID Validator"**.
-3. Go to **Definition** -> **Endpoints** and import the `openapi.yaml` file from this project to automatically populate endpoints, requests, and schemas.
-4. Set the **Target URL** to your Cloudflare Workers URL.
-5. Define your pricing plans in **Monetization** using the tiers below.
-
----
-
 ## Plans & Pricing
 
 We offer flexible subscription plans on RapidAPI:
